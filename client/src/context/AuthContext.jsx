@@ -1,11 +1,26 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import config from '../config';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [productCount, setProductCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const fetchStats = async (token) => {
+    try {
+      const res = await axios.get(`${config.apiUrl}/users/me/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProductCount(res.data.productCount);
+    } catch (err) {
+      console.error('Error fetching stats', err);
+    }
+  };
+
+  const incrementProductCount = () => setProductCount(prev => prev + 1);
 
   // Al iniciar la app, chequeamos si hay token guardado
   useEffect(() => {
@@ -13,13 +28,14 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('user');
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
+      fetchStats(token);
     }
     setLoading(false);
   }, []);
 
   const login = async (username, password) => {
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', {
+      const response = await axios.post(`${config.apiUrl}/auth/login`, {
         username,
         password
       });
@@ -30,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(loggedUser));
       setUser(loggedUser);
+      fetchStats(token);
       
       return { success: true };
     } catch (error) {
@@ -44,10 +61,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setProductCount(0);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, productCount, incrementProductCount, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

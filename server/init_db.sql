@@ -27,8 +27,27 @@ INSERT INTO users (username, password_hash) VALUES
 ('bob', 'password123')
 ON CONFLICT (username) DO NOTHING;
 
+-- 4. Crear tabla de Productos
+CREATE TABLE IF NOT EXISTS products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER NOT NULL,
+    CONSTRAINT fk_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. Insertar productos de prueba por defecto (asumiendo que admin tiene id 1)
+INSERT INTO products (name, price, created_by) VALUES
+('Teclado Mecánico', 120.50, 1),
+('Mouse Inalámbrico', 45.00, 1),
+('Monitor 27" 4K', 350.00, 2),
+('Silla Ergonómica', 210.00, 2)
+ON CONFLICT DO NOTHING;
+
 -- Mensaje de éxito
 \echo '==================================================='
 \echo 'Base de datos inicializada correctamente.'
+\echo 'Tablas creadas: users, messages, products'
 \echo 'Usuarios por defecto creados: admin, johndoe, janesmith, bob'
 \echo '==================================================='
